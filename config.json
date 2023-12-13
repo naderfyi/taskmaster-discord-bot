@@ -1,0 +1,18 @@
+{
+  "azure": {
+    "tenant_id": "YOUR_TENANT_ID",
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET",
+    "plan_id": "YOUR_PLAN_ID"
+  },
+  "discord": {
+    "token": "YOUR_DISCORD_BOT_TOKEN",
+    "log_channel_id": "YOUR_LOG_CHANNEL_ID"
+  },
+  "mappings": {
+    "discord_id_mapping": {},
+    "bucket_id_to_name_mapping": {},
+    "user_id_to_name_mapping": {},
+    "discord_channel_mapping": {}
+  }
+}
