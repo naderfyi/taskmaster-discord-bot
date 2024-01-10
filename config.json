@@ -5,6 +5,11 @@
     "client_secret": "YOUR_CLIENT_SECRET",
     "plan_id": "YOUR_PLAN_ID"
   },
+  "aws": {
+    "access_key_id": "YOUR_AWS_ACCESS_KEY_ID",
+    "secret_access_key": "YOUR_AWS_SECRET_ACCESS_KEY",
+    "security_group_id": "YOUR_SECURITY_GROUP_ID"
+},
   "discord": {
     "token": "YOUR_DISCORD_BOT_TOKEN",
     "log_channel_id": "YOUR_LOG_CHANNEL_ID"

@@ -7,6 +7,8 @@ from nextcord import SlashOption
 from msgraph.generated.models.planner_assignments import PlannerAssignments
 from msgraph.generated.models.planner_task import PlannerTask
 import json
+import boto3
+
 
 def load_config():
     try:
@@ -45,6 +47,19 @@ bucket_id_by_discord_channel = {v: k for k, v in discord_channel_mapping.items()
 
 # Invert the mapping to look up user IDs by Discord ID.
 discord_id_to_user_id_mapping = {v: k for k, v in discord_id_mapping.items()}
+
+# Load AWS Config
+AWS_ACCESS_KEY = config['aws']['access_key_id']
+AWS_SECRET_KEY = config['aws']['secret_access_key']
+SECURITY_GROUP_ID = config['aws']['security_group_id']
+
+# Initialize EC2 Resource with AWS Config
+ec2 = boto3.resource(
+    'ec2',
+    region_name='us-east-1',
+    aws_access_key_id=AWS_ACCESS_KEY,
+    aws_secret_access_key=AWS_SECRET_KEY,
+)
 
 def split_messages(tasks, max_length=2000):
     # If the entire message is shorter than the max length, return it as is.
@@ -343,8 +358,45 @@ async def create_task(interaction: nextcord.Interaction, member: nextcord.Member
     
     result = await create_planner_task(user_id, task_title, bucket_id)
     if result:
-        await interaction.followup.send("Task created successfully.")
+        # Create a success embed
+        embed = nextcord.Embed(title="Task Created Successfully", color=nextcord.Color.green())
+        embed.add_field(name="Task Title", value=task_title, inline=False)
+
+        # Construct a clickable channel mention
+        if bucket:
+            bucket_mention = bucket.mention
+        else:
+            bucket_mention = f"<#{interaction.channel.id}>"
+        embed.add_field(name="Bucket", value=bucket_mention, inline=True)
+
+        # Mention the user
+        assigned_user_mention = member.mention
+        embed.add_field(name="Assigned To", value=assigned_user_mention, inline=True)
+
+        # Send the success embed
+        await interaction.followup.send(embed=embed)
     else:
-        await interaction.followup.send("Failed to create task.")
-        
+        # Create a failure embed
+        embed = nextcord.Embed(title="Failed to Create Task", color=nextcord.Color.red())
+
+        # Send the failure embed
+        await interaction.followup.send(embed=embed)
+
+@bot.slash_command(description="Whitelist an IP address")
+async def whitelist(interaction: nextcord.Interaction, ip_address: str, port: int = 8080):
+    await interaction.response.defer()
+    
+    try:
+        security_group = ec2.SecurityGroup(SECURITY_GROUP_ID)
+        ip_permission = {
+            'IpProtocol': 'tcp',
+            'FromPort': port,
+            'ToPort': port,
+            'IpRanges': [{'CidrIp': f'{ip_address}/32'}]
+        }
+        security_group.authorize_ingress(IpPermissions=[ip_permission])
+        await interaction.followup.send(f"Your IP has been whitelisted on port {port}.")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to whitelist: {str(e)}")
+      
 bot.run(BOT_TOKEN)
